@@ -1,65 +1,69 @@
 import requests, os, time, base64, re
 
-# Cores
-R='\033[1;31m'; B='\033[1;34m'; C='\033[1;37m'; Y='\033[1;33m'; G='\033[1;32m'; RT='\033[;0m'
+# Cores para o Termux
+R='\033[1;31m'; B='\033[1;34m'; C='\033[1;37m'; Y='\033[1;33m'; G='\033[1;32m'
 
-# URL Descodificada do MTE (Consulta CPF)
-URL_BASE = base64.b64decode('aHR0cDovL3d3dy5qdXZlbnR1ZGV3ZWIubXRlLmdvdi5ici9wbnBlcGVzcXVpc2FzLmFzcA==').decode('ascii')
+# URL decodificada do Ministério do Trabalho (MTE)
+a = base64.b64decode('aHR0cDovL3d3dy5qdXZlbnR1ZGV3ZWIubXRlLmdvdi5ici9wbnBlcGVzcXVpc2FzLmFzcA==').decode('ascii')
 
 def clear():
     os.system("clear")
 
-def consultar_cpf(cpf):
-    clear()
-    print(f"{C}[{G}*{C}] Consultando CPF: {B}{cpf}{C}...")
-    
-    headers = {
-        'Content-Type': "application/x-www-form-urlencoded",
-        'Host': "www.juventudeweb.mte.gov.br"
-    }
-    data = f'acao=consultar%20cpf&cpf={cpf}'
+def banner():
+    print(f"{B}="*45)
+    print(f"{G}      PAINEL DE CONSULTA - SOMOS UMA LEGIÃO")
+    print(f"{B}="*45)
 
+def consultar(cpf):
     try:
-        response = requests.post(URL_BASE, headers=headers, data=data, timeout=10).text
+        clear()
+        banner()
+        print(f"\n{C}[{G}*{C}] Consultando CPF: {B}{cpf}{C}...\n")
         
-        # Extração dos dados usando ReGex (conforme o código que você achou)
-        nome = re.search('NOPESSOAFISICA="(.*?)"', response).group(1).title()
-        nasc = re.search('DTNASCIMENTO="(.*?)"', response).group(1)
-        mae = re.search('NOMAE="(.*?)"', response).group(1).title()
-        rua = re.search('NOLOGRADOURO="(.*?)"', response).group(1).title()
-        city = re.search('NOMUNICIPIO="(.*?)"', response).group(1).title()
-        uf = re.search('SGUF="(.*?)"', response).group(1)
+        h = {
+            'Content-Type': "application/x-www-form-urlencoded",
+            'Host': "www.juventudeweb.mte.gov.br"
+        }
+        # Envia a requisição para o site do MTE
+        r = requests.post(a, headers=h, data=f'acao=consultar%20cpf&cpf={cpf}', timeout=15).text
+        
+        # Extração de dados via Regex
+        print(f"{G}--- [ RESULTADOS REAIS ] ---{C}")
+        print(f"{Y}CPF:{C} {re.search('NRCPF=\"(.*?)\"', r).group(1)}")
+        print(f"{Y}Nome:{C} {re.search('NOPESSOAFISICA=\"(.*?)\"', r).group(1).title()}")
+        print(f"{Y}Nascimento:{C} {re.search('DTNASCIMENTO=\"(.*?)\"', r).group(1)}")
+        print(f"{Y}Nome da Mae:{C} {re.search('NOMAE=\"(.*?)\"', r).group(1).title()}")
+        print(f"{Y}Endereco:{C} {re.search('NOLOGRADOURO=\"(.*?)\"', r).group(1).title()}")
+        print(f"{Y}Cidade:{C} {re.search('NOMUNICIPIO=\"(.*?)\"', r).group(1).title()}-{re.search('SGUF=\"(.*?)\"', r).group(1)}")
+        print(f"{Y}CEP:{C} {re.search('NRCEP=\"(.*?)\"', r).group(1)}")
+        print(f"{G}----------------------------{C}")
 
-        print(f"\n{G}--- DADOS ENCONTRADOS ---{C}")
-        print(f"{Y}NOME:{C} {nome}")
-        print(f"{Y}NASCIMENTO:{C} {nasc}")
-        print(f"{Y}MÃE:{C} {mae}")
-        print(f"{Y}ENDEREÇO:{C} {rua}")
-        print(f"{Y}CIDADE:{C} {city}-{uf}")
-        print(f"{G}--------------------------{C}")
-
-    except:
-        print(f"\n{R}[!] Erro: CPF não encontrado ou sistema fora do ar.{C}")
+    except AttributeError:
+        print(f"{R}[!] Erro: CPF não encontrado ou base de dados offline.{C}")
+    except Exception as e:
+        print(f"{R}[!] Erro de conexão.{C}")
     
-    input(f"\n{Y}Pressione Enter para voltar...{C}")
+    input(f"\n{G}[+]{C} Pressione Enter para voltar ao menu...")
 
-def menu():
+def main():
     while True:
         clear()
-        print(f"{B}="*40)
-        print(f"{G}      PAINEL LEGADO - CONSULTA CPF")
-        print(f"{B}="*40)
-        print(f"{C}[{G} 1 {C}] Consultar CPF")
+        banner()
+        print(f"\n{C}[{G} 1 {C}] Consultar CPF")
         print(f"{C}[{G} 0 {C}] Sair")
         
-        op = input(f"\n{Y}Escolha uma opção: {C}")
+        op = input(f"\n{G}[+]{C} Selecione uma opção: {B}")
         
         if op == '1':
-            num = input(f"{G}Digite o CPF (apenas números): {C}")
-            consultar_cpf(num)
+            cpf = input(f"{C}[{G}*{C}] Informe o CPF (apenas números): {B}")
+            consultar(cpf)
         elif op == '0':
+            print(f"\n{G}Somos uma legião.{C}\n")
             break
+        else:
+            print(f"{R}Opção Inválida!{C}")
+            time.sleep(1)
 
 if __name__ == "__main__":
-    menu()
-  
+    main()
+    
